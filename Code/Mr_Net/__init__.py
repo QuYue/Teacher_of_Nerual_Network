@@ -90,6 +90,7 @@ def MGD(network, feature, label, test_feature=None, test_label=None, batch_size=
         y = network(feature[i: i + batch_size])  # 预测结果
 
         loss = criterion(y, label[i: i + batch_size])  #计算损失
+        optimizer.zero_grad()
         loss.backward()  # 反向传播
         optimizer.step()  # 优化参数
 

@@ -19,7 +19,7 @@ class Parameter():
     def __init__(self):
         self.PATH = '../Data/'  # path 路径
         self.FILE = 'datingTestSet2.txt'  # file name 文件名
-        self.EPOCH = 1 # epoch 迭代次数
+        self.EPOCH = 2 # epoch 迭代次数
         self.TRAINTEST = 4 / 1  # train/test 训练集与测试集的比例
 
     def stats(self, data):  # statistics 统计
@@ -29,7 +29,6 @@ class Parameter():
         self.test_amount = shape[0] - self.train_amount
         self.feature_amount = shape[1] - 1
         self.class_amount = len(data['label'].unique())
-
 
 # %% Hyper Parameter
 Parm = Parameter()
@@ -51,7 +50,7 @@ train_feature0, train_label0, test_feature, test_label = mn.dataprocess.split(fe
 LR1 = mn.LR_Classifier(Parm.feature_amount, 3)
 # torch.save(LR1.state_dict(), Parm.PATH + 'LR1.pth')
 # %% Lesson
-lessons = ['Lesson1-1', 'None']
+lessons = ['Lesson1-1', 'Lesson1-2', 'None']
 for l in lessons:
     if l == 'Lesson1-1':
         repeat = 1
