@@ -100,7 +100,8 @@ def MGD(network, feature, label, test_feature=None, test_label=None, batch_size=
     criterion = torch.nn.CrossEntropyLoss()  # 损失函数
     for i in range(0, N, batch_size):
         optimizer.zero_grad()
-        if enable_wrong_repeat and i:
+
+        if enable_wrong_repeat and i:   #如果启用错题集模式，则在下一次训练加入本次错题
             wrong_feature = []
             wrong_label = []
             wrong_id = pick_wrong(train_predict_label[i - batch_size: i], label[i - batch_size: i])
