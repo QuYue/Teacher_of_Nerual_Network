@@ -60,8 +60,21 @@ def compare_label(y, label):
     result['Total'] = Result(int((pre_y == label).sum()), len(label))
     return result
 
+def pick_wrong(y, label):
+    """
+    比较预测结果与真实结果
+    :param y: 预测结果
+    :param label: 真实结果
+    :return: 输出结果（numpy：如果是错误则为1，否则为0）
+    """
+    class_amount = y.shape[1]
+    pre_y = torch.max(y, 1)[1].data.numpy()  # 得到结果的类别
+    label = label.numpy()
 
-def MGD(network, feature, label, test_feature=None, test_label=None, batch_size=1, lr=0.01, show=True):
+    wrong = (pre_y != label)
+    return wrong
+
+def MGD(network, feature, label, test_feature=None, test_label=None, batch_size=1, lr=0.01, show=True, enable_wrong_repeat = 0):
     """
 
     :param network: 输入的网络
@@ -82,22 +95,41 @@ def MGD(network, feature, label, test_feature=None, test_label=None, batch_size=
     if (type(test_feature) != type(None)) and \
             (type(test_label) != type(None)):
         test_mode = True
-
     # 训练
     optimizer = torch.optim.SGD(network.parameters(), lr=lr)  #优化器
     criterion = torch.nn.CrossEntropyLoss()  # 损失函数
     for i in range(0, N, batch_size):
-        y = network(feature[i: i + batch_size])  # 预测结果
+        optimizer.zero_grad()
+        if enable_wrong_repeat and i:
+            wrong_feature = []
+            wrong_label = []
+            wrong_id = pick_wrong(train_predict_label[i - batch_size: i], label[i - batch_size: i])
+            for idx,isWrong in enumerate(wrong_id):
+                if isWrong:
+                    wrong_feature.append(feature[i - batch_size + idx,:].tolist())
+                    wrong_label.append(label[i - batch_size + idx].tolist())
+            wrong_feature = torch.Tensor(wrong_feature)
+            wrong_label = torch.Tensor(wrong_label).type(torch.LongTensor)
 
-        loss = criterion(y, label[i: i + batch_size])  #计算损失
+            y = network(torch.cat([feature[i: i + batch_size],wrong_feature],0))  # 预测结果
+
+            loss = criterion(y, torch.cat([label[i: i + batch_size],wrong_label],0))  # 计算损失
+        else:
+            y = network(feature[i: i + batch_size])  # 预测结果
+
+            loss = criterion(y, label[i: i + batch_size])  #计算损失
         loss.backward()  # 反向传播
+
         optimizer.step()  # 优化参数
 
         result_step = Mr_Result()  # 每一步结果用Mr_Result存储
 
-        result_step.train = compare_label(network(feature), label)  # 训练数据结果
+        train_predict_label = network(feature)
+        result_step.train = compare_label(train_predict_label, label)  # 训练数据结果
+
         if test_mode:
-            result_step.test = compare_label(network(test_feature), test_label)  # 测试数据结果
+            test_predict_label = network(test_feature)
+            result_step.test = compare_label(test_predict_label, test_label)  # 测试数据结果
         result.append(result_step)  # 存入结果中
 
         if show:  # 展示中间过程
